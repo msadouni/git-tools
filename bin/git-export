@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# extract current branch name
+BRANCH=$(git name-rev HEAD 2> /dev/null | awk "{ print \$2 }")
+
+# get name of the top most folder of current directory, used for the
+# output filename
+PROJECT_NAME=$(basename $(pwd))
+
+# generate an identifier so archives won't be overwritten
+if [[ $BRANCH = tags* ]]; then
+  IDENTIFIER=$(git describe)
+else
+  IDENTIFIER=$(git rev-parse $BRANCH)
+fi
+
+REVISION=$(git rev-parse --short $BRANCH)
+echo "Exporting ${BRANCH} at ${REVISION}"
+FILENAME=$PROJECT_NAME-$IDENTIFIER.tgz
+
+OUTPUT=$(pwd)/$FILENAME
+
+git archive --format=tar --prefix=$PROJECT_NAME-$IDENTIFIER/ $BRANCH | gzip > $OUTPUT
+
+echo "Saved to $FILENAME (`du -h $OUTPUT | cut -f1`)"
