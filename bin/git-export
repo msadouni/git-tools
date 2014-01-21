@@ -1,4 +1,22 @@
-#!/bin/sh
+#!/bin/bash
+
+PREFIX=""
+
+while getopts ":p:" opt; do
+  case $opt in
+    p)
+      PREFIX="$OPTARG"
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
 
 # extract current branch name
 BRANCH=$(git name-rev HEAD 2> /dev/null | awk "{ print \$2 }")
@@ -14,12 +32,16 @@ else
   IDENTIFIER=$(git rev-parse $BRANCH)
 fi
 
+if [[ -z "$PREFIX" ]]; then
+  PREFIX=$PROJECT_NAME-$IDENTIFIER
+fi
+
 REVISION=$(git rev-parse --short $BRANCH)
 echo "Exporting ${BRANCH} at ${REVISION}"
 FILENAME=$PROJECT_NAME-$IDENTIFIER.tgz
 
 OUTPUT=$(pwd)/$FILENAME
 
-git archive --format=tar --prefix=$PROJECT_NAME-$IDENTIFIER/ $BRANCH | gzip > $OUTPUT
+git archive --format=tar --prefix=$PREFIX/ $BRANCH | gzip > $OUTPUT
 
 echo "Saved to $FILENAME (`du -h $OUTPUT | cut -f1`)"
